@@ -179,22 +179,26 @@
   // one trial: a fresh worm with this brain, run for some seconds.
   // task "run": fitness = how far it went right. task "jump": fitness = how high its middle got.
   // task "fly": fitness = height gained, summed over the time no joint touches the ground (airtime).
-  function trial(brain, seconds, groundY, task, segments) {
+  function trial(brain, seconds, groundY, task, segments, wall) {
     var world = makeWorld({ groundY: groundY });
-    var worm = makeWorm({ x: 0, y: 250, segments: segments || 6, gap: 34 });
+    world.wall = wall || null;
+    var startX = wall ? wall.x - 260 : 0;
+    var worm = makeWorm({ x: startX, y: 250, segments: segments || 6, gap: 34 });
     worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     worm.brain = brain;
     world.creatures.push(worm);
     var start = centre(worm);
     var highest = 0;
     var flight = 0;
+    var climbed = 0;
     for (var t = 0; t < seconds; t += 1 / 60) {
       step(world, 1 / 60, 4);
       var c = centre(worm);
       highest = Math.max(highest, start.y - c.y);
       if (!touching(world, worm)) flight += Math.max(0, start.y - c.y) / 60;
+      if (wall) climbed = Math.max(climbed, wallHeight(world, worm, wall));
     }
-    var score = task === 'jump' ? highest : task === 'fly' ? flight : c.x - start.x;
+    var score = task === 'jump' ? highest : task === 'fly' ? flight : task === 'climb' ? climbed : c.x - start.x;
     return Number.isFinite(score) ? score : -1e9;
   }
 
@@ -213,6 +217,7 @@
       sigma: opts.sigma || 0.2,
       seconds: opts.seconds || 10,
       task: opts.task || 'run',
+      wall: opts.wall || null,
       segments: segs,
       groundY: opts.groundY,
       rng: rng(seed * 7919 + 1),
@@ -247,8 +252,9 @@
   }
 
   // switch the task mid-run. the population (and what it learned) is kept; the scores start again.
-  function setTask(ev, task) {
+  function setTask(ev, task, wall) {
     ev.task = task;
+    ev.wall = wall || null;
     ev.scores = new Array(ev.size);
     ev.index = 0;
     ev.best = null;
@@ -260,12 +266,22 @@
     var start = Date.now();
     do {
       if (ev.index < ev.pop.length) {
-        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY, ev.task, ev.segments);
+        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY, ev.task, ev.segments, ev.wall);
         ev.index++;
       } else {
         breed(ev);
       }
     } while (Date.now() - start < budgetMs);
+  }
+
+  // how high a joint has got up the face of the wall (0 if none is touching it).
+  function wallHeight(world, creature, wall) {
+    var h = 0;
+    for (var i = 0; i < creature.nodes.length; i++) {
+      var p = creature.nodes[i];
+      if (Math.abs(p.x - (wall.x - p.r)) < 1.5) h = Math.max(h, world.groundY(p.x) - p.y);
+    }
+    return h;
   }
 
   // true if any joint is on the ground right now.
@@ -349,6 +365,12 @@
       var vx = p.x - p.px;
       var grip = vx < 0 ? world.gripBack : world.gripFwd;
       p.px = p.x - vx * (1 - grip);
+    }
+    // a wall (M4 climb): a face from the ground up to wall.top, joints stop at its left side
+    var w = world.wall;
+    if (w && p.y > w.top && p.x > w.x - p.r) {
+      p.x = w.x - p.r;
+      p.px = p.x;
     }
   }
 

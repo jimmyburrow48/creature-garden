@@ -25,6 +25,8 @@
     { name: 'long worm', segments: 9 }
   ];
   var preset = 1;
+  // climb (M4): a wall the body must climb. only in the climb task.
+  var WALL = { x: 140, top: 120 };
   var creature = null;
   var cam = { x: START_X };
   var camTop = VIEW_TOP; // the view also rises when the creature jumps up
@@ -45,6 +47,7 @@
 
   function reset(newSeed) {
     if (newSeed !== undefined) brainSeed = newSeed;
+    world.wall = task === 'climb' ? WALL : null;
     world.creatures = [];
     world.time = 0;
     creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
@@ -262,11 +265,26 @@
     ctx.fillRect(0, 0, width, height);
   }
 
+  // the climb wall: a stone face from the ground up to its top
+  function drawWall(w) {
+    var x0 = sx(w.x);
+    var top = sy(w.top);
+    var bottom = sy(groundY(w.x) + 10);
+    var g = ctx.createLinearGradient(x0, 0, x0 + 26 * scale, 0);
+    g.addColorStop(0, '#9a9488');
+    g.addColorStop(1, '#6d685f');
+    ctx.fillStyle = g;
+    ctx.fillRect(x0, top, 26 * scale, bottom - top);
+    ctx.fillStyle = 'rgba(255,255,240,0.5)';
+    ctx.fillRect(x0, top, 26 * scale, 3 * scale);
+  }
+
   function draw() {
     drawSky();
     drawHills(0.25, 230, 26, 'rgba(170,205,190,0.8)', 0.4);
     drawHills(0.5, 262, 18, 'rgba(120,175,140,0.9)', 2.1);
     drawGround();
+    if (world.wall) drawWall(world.wall);
     if (creature) {
       drawShadow(S.centre(creature));
       drawCreature(creature);
@@ -284,7 +302,7 @@
     var line2 = 'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths';
     if (evoOn) {
       line2 = 'evolving ' + task + '  ·  gen ' + evo.gen + '  ·  best ' +
-        (task === 'run' ? (evo.bestScore / 34).toFixed(1) + ' body lengths' : task === 'jump' ? evo.bestScore.toFixed(0) + ' px high' : evo.bestScore.toFixed(0) + ' flight') +
+        (task === 'run' ? (evo.bestScore / 34).toFixed(1) + ' body lengths' : task === 'jump' ? evo.bestScore.toFixed(0) + ' px high' : evo.bestScore.toFixed(0) + (task === 'climb' ? ' px up the wall' : ' flight')) +
         '  ·  trial ' + evo.index + '/' + evo.size;
     }
     hud.textContent =
@@ -313,7 +331,7 @@
   }
 
   function startEvolution(seed) {
-    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task, segments: presets[preset].segments });
+    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task, segments: presets[preset].segments, wall: task === 'climb' ? WALL : null });
     evoOn = true;
     shownScore = -Infinity;
     world.time = 0;
@@ -407,9 +425,10 @@
         reset();
       }
     } else if (e.key === 't' || e.key === 'T') {
-      task = task === 'run' ? 'jump' : task === 'jump' ? 'fly' : 'run';
+      task = task === 'run' ? 'jump' : task === 'jump' ? 'fly' : task === 'fly' ? 'climb' : 'run';
+      world.wall = task === 'climb' ? WALL : null;
       if (evoOn) {
-        S.setTask(evo, task);
+        S.setTask(evo, task, world.wall);
         shownScore = -Infinity;
       }
     } else if (e.key === 'r' || e.key === 'R') {
