@@ -179,9 +179,9 @@
   // one trial: a fresh worm with this brain, run for some seconds.
   // task "run": fitness = how far it went right. task "jump": fitness = how high its middle got.
   // task "fly": fitness = height gained, summed over the time no joint touches the ground (airtime).
-  function trial(brain, seconds, groundY, task) {
+  function trial(brain, seconds, groundY, task, segments) {
     var world = makeWorld({ groundY: groundY });
-    var worm = makeWorm({ x: 0, y: 250, segments: 6, gap: 34 });
+    var worm = makeWorm({ x: 0, y: 250, segments: segments || 6, gap: 34 });
     worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     worm.brain = brain;
     world.creatures.push(worm);
@@ -202,7 +202,8 @@
   function newEvolution(opts) {
     var size = opts.size || 16;
     var seed = opts.seed || 1;
-    var probe = makeWorm({ x: 0, y: 0, segments: 6, gap: 34 });
+    var segs = opts.segments || 6;
+    var probe = makeWorm({ x: 0, y: 0, segments: segs, gap: 34 });
     var nIn = probe.nodes.length * 2 + probe.muscles.length + 2;
     var pop = [];
     for (var i = 0; i < size; i++) pop.push(makeBrain(seed * 1000 + i, nIn, probe.muscles.length));
@@ -212,6 +213,7 @@
       sigma: opts.sigma || 0.2,
       seconds: opts.seconds || 10,
       task: opts.task || 'run',
+      segments: segs,
       groundY: opts.groundY,
       rng: rng(seed * 7919 + 1),
       pop: pop,
@@ -258,7 +260,7 @@
     var start = Date.now();
     do {
       if (ev.index < ev.pop.length) {
-        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY, ev.task);
+        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY, ev.task, ev.segments);
         ev.index++;
       } else {
         breed(ev);

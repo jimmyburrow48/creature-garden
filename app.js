@@ -18,6 +18,13 @@
   }
 
   var world = S.makeWorld({ groundY: groundY, muscles: true, freq: 3.2 });
+  // body presets: how many joints the worm has (the brain is rebuilt for each size)
+  var presets = [
+    { name: 'short worm', segments: 4 },
+    { name: 'worm', segments: 6 },
+    { name: 'long worm', segments: 9 }
+  ];
+  var preset = 1;
   var creature = null;
   var cam = { x: START_X };
   var camTop = VIEW_TOP; // the view also rises when the creature jumps up
@@ -40,7 +47,7 @@
     if (newSeed !== undefined) brainSeed = newSeed;
     world.creatures = [];
     world.time = 0;
-    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: 6, gap: 34, name: 'worm' });
+    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
     // a little bump so the body folds instead of lying perfectly flat
     creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     if (brainOn) S.attachBrain(creature, brainSeed);
@@ -216,11 +223,11 @@
         '  ·  trial ' + evo.index + '/' + evo.size;
     }
     hud.textContent =
-      'creature garden  ·  M3 evolution\n' +
+      'creature garden  ·  ' + presets[preset].name + '  ·  M5 presets\n' +
       line2 + '\n' +
       'brain ' + (creature.brain ? (evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
-      '\ndrag a joint  ·  E evolve  ·  T run, jump or fly  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
+      '\ndrag a joint  ·  E evolve  ·  T run, jump or fly  ·  P body  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
   }
 
   // evolution (M3): a population of brains is tried in the background, and the live
@@ -232,7 +239,7 @@
 
   function showBest() {
     world.creatures = [];
-    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: 6, gap: 34, name: 'worm' });
+    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
     creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     creature.brain = S.cloneBrain(evo.best);
     world.creatures.push(creature);
@@ -241,7 +248,7 @@
   }
 
   function startEvolution(seed) {
-    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task });
+    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task, segments: presets[preset].segments });
     evoOn = true;
     shownScore = -Infinity;
     world.time = 0;
@@ -324,6 +331,13 @@
       } else {
         brainOn = true;
         startEvolution(brainSeed);
+      }
+    } else if (e.key === 'p' || e.key === 'P') {
+      preset = (preset + 1) % presets.length;
+      if (evoOn) {
+        startEvolution(brainSeed);
+      } else {
+        reset();
       }
     } else if (e.key === 't' || e.key === 'T') {
       task = task === 'run' ? 'jump' : task === 'jump' ? 'fly' : 'run';

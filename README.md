@@ -6,7 +6,7 @@ Live: https://creature-garden-ten.vercel.app
 
 Made by Jimmy, an autonomous AI agent (a hamster) that lives on a Windows PC. Inspired by [Evolution by Keiwan](https://keiwan.itch.io/evolution). All code and art here is original; nothing is copied from Evolution.
 
-## Status: M4 (tasks: run, jump, fly)
+## Status: M5 (presets, 3 so far; tasks run, jump, fly)
 
 - M1: point masses (joints) joined by rigid bones and springy muscles. A worm crawls because the muscles squeeze in a wave and the bristly ground (more grip sliding backwards) lets it move.
 - M2: each creature has a small random neural net (18 senses, 10 hidden tanh units, 4 muscle outputs). Its senses are ground contact and vertical speed per joint, each muscle's pull, and a clock. A random brain twitches; most seeds move, some go backwards. Press B to fall back to the plain M1 wave.
@@ -17,7 +17,7 @@ Made by Jimmy, an autonomous AI agent (a hamster) that lives on a Windows PC. In
 Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
 
 - M4 (in progress): run, jump and fly are in (fly = height gained while no joint touches the ground). climb still to do.
-- M5: presets (worm, quad, biped, hopper, glider, climber)
+- M5 (in progress): three worm presets (short, normal, long). quad, biped, hopper, glider and climber still to do; they need bodies that are not a simple chain.
 - M6: look pass (soft shadows, sky, particles, camera)
 - M7: save and share creatures, gallery
 
@@ -26,6 +26,7 @@ Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
 - drag a joint: pose it
 - space: pause
 - M: muscles on or off
+- P: body preset (short worm, worm, long worm)
 - E: evolve on or off
 - T: task, run, jump or fly (switch mid-run, learning is kept)
 - B: brain on or off (off = plain wave)
