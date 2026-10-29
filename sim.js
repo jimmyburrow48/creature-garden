@@ -178,6 +178,7 @@
 
   // one trial: a fresh worm with this brain, run for some seconds.
   // task "run": fitness = how far it went right. task "jump": fitness = how high its middle got.
+  // task "fly": fitness = height gained, summed over the time no joint touches the ground (airtime).
   function trial(brain, seconds, groundY, task) {
     var world = makeWorld({ groundY: groundY });
     var worm = makeWorm({ x: 0, y: 250, segments: 6, gap: 34 });
@@ -186,11 +187,14 @@
     world.creatures.push(worm);
     var start = centre(worm);
     var highest = 0;
+    var flight = 0;
     for (var t = 0; t < seconds; t += 1 / 60) {
       step(world, 1 / 60, 4);
-      highest = Math.max(highest, start.y - centre(worm).y);
+      var c = centre(worm);
+      highest = Math.max(highest, start.y - c.y);
+      if (!touching(world, worm)) flight += Math.max(0, start.y - c.y) / 60;
     }
-    var score = task === 'jump' ? highest : centre(worm).x - start.x;
+    var score = task === 'jump' ? highest : task === 'fly' ? flight : c.x - start.x;
     return Number.isFinite(score) ? score : -1e9;
   }
 
@@ -260,6 +264,15 @@
         breed(ev);
       }
     } while (Date.now() - start < budgetMs);
+  }
+
+  // true if any joint is on the ground right now.
+  function touching(world, creature) {
+    for (var i = 0; i < creature.nodes.length; i++) {
+      var p = creature.nodes[i];
+      if (p.y >= world.groundY(p.x) - p.r - 0.5) return true;
+    }
+    return false;
   }
 
   // ---- physics ----------------------------------------------------------

@@ -212,7 +212,7 @@
     var line2 = 'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths';
     if (evoOn) {
       line2 = 'evolving ' + task + '  ·  gen ' + evo.gen + '  ·  best ' +
-        (task === 'jump' ? evo.bestScore.toFixed(0) + ' px high' : (evo.bestScore / 34).toFixed(1) + ' body lengths') +
+        (task === 'run' ? (evo.bestScore / 34).toFixed(1) + ' body lengths' : task === 'jump' ? evo.bestScore.toFixed(0) + ' px high' : evo.bestScore.toFixed(0) + ' flight') +
         '  ·  trial ' + evo.index + '/' + evo.size;
     }
     hud.textContent =
@@ -220,7 +220,7 @@
       line2 + '\n' +
       'brain ' + (creature.brain ? (evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
-      '\ndrag a joint  ·  E evolve  ·  T run or jump  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
+      '\ndrag a joint  ·  E evolve  ·  T run, jump or fly  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
   }
 
   // evolution (M3): a population of brains is tried in the background, and the live
@@ -228,7 +228,7 @@
   var evo = null;
   var evoOn = false;
   var shownScore = -Infinity;
-  var task = 'run'; // 'run' = how far right, 'jump' = how high the middle gets
+  var task = 'run'; // 'run' = how far right, 'jump' = how high, 'fly' = height gained while in the air
 
   function showBest() {
     world.creatures = [];
@@ -326,7 +326,7 @@
         startEvolution(brainSeed);
       }
     } else if (e.key === 't' || e.key === 'T') {
-      task = task === 'run' ? 'jump' : 'run';
+      task = task === 'run' ? 'jump' : task === 'jump' ? 'fly' : 'run';
       if (evoOn) {
         S.setTask(evo, task);
         shownScore = -Infinity;
