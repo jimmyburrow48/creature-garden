@@ -280,6 +280,24 @@
     ctx.fillRect(x0, top, 26 * scale, 3 * scale);
   }
 
+  // a soft contact shadow under each joint, stronger the closer it is to the ground (M6 look)
+  function drawJointShadows(c) {
+    for (var i = 0; i < c.nodes.length; i++) {
+      var n = c.nodes[i];
+      var gap = groundY(n.x) - (n.y + n.r);
+      if (gap > 60) continue;
+      var k = 1 - Math.max(0, gap) / 60;
+      ctx.save();
+      ctx.translate(sx(n.x), sy(groundY(n.x) + 1));
+      ctx.scale(1, 0.22);
+      ctx.fillStyle = 'rgba(30,50,30,' + (0.3 * k).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(0, 0, n.r * 2.4 * scale * k + 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   function draw() {
     drawSky();
     drawHills(0.25, 230, 26, 'rgba(170,205,190,0.8)', 0.4);
@@ -288,6 +306,7 @@
     if (world.wall) drawWall(world.wall);
     if (creature) {
       drawShadow(S.centre(creature));
+      drawJointShadows(creature);
       drawCreature(creature);
     }
     drawPuffs();
