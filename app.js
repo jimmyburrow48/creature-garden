@@ -208,17 +208,49 @@
     var c = S.centre(creature);
     var dist = (c.x - START_X + 60) / 34; // body segments travelled
     var secs = world.time;
+    var line2 = 'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths';
+    if (evoOn) {
+      line2 = 'evolving  ·  gen ' + evo.gen + '  ·  best ' + (evo.bestScore / 34).toFixed(1) +
+        ' body lengths  ·  trial ' + evo.index + '/' + evo.size;
+    }
     hud.textContent =
-      'creature garden  ·  M2 brain\n' +
-      'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths\n' +
-      'brain ' + (creature.brain ? 'random net, seed ' + brainSeed : 'off (plain wave)') +
+      'creature garden  ·  M3 evolution\n' +
+      line2 + '\n' +
+      'brain ' + (creature.brain ? (evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
-      '\ndrag a joint to pose  ·  B brain  ·  M muscles  ·  space pause  ·  R new brain';
+      '\ndrag a joint  ·  E evolve  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
+  }
+
+  // evolution (M3): a population of brains is tried in the background, and the live
+  // creature shows the best brain found so far whenever it improves.
+  var evo = null;
+  var evoOn = false;
+  var shownScore = -Infinity;
+
+  function showBest() {
+    world.creatures = [];
+    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: 6, gap: 34, name: 'worm' });
+    creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
+    creature.brain = S.cloneBrain(evo.best);
+    world.creatures.push(creature);
+    cam.x = START_X;
+    shownScore = evo.bestScore;
+  }
+
+  function startEvolution(seed) {
+    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY });
+    evoOn = true;
+    shownScore = -Infinity;
+    world.time = 0;
   }
 
   function frame(t) {
     var dt = Math.min((t - lastT) / 1000, 1 / 30);
     lastT = t;
+    if (evoOn && !paused) {
+      S.evolveTick(evo, 8);
+      if (evo.best && evo.bestScore > shownScore) showBest();
+    }
     if (!paused) {
       acc += dt;
       while (acc >= fixedDt) {
@@ -277,9 +309,22 @@
       world.muscles = !world.muscles;
     } else if (e.key === 'b' || e.key === 'B') {
       brainOn = !brainOn;
+      evoOn = false;
       reset();
+    } else if (e.key === 'e' || e.key === 'E') {
+      if (evoOn) {
+        evoOn = false;
+        reset();
+      } else {
+        brainOn = true;
+        startEvolution(brainSeed);
+      }
     } else if (e.key === 'r' || e.key === 'R') {
-      reset(brainSeed + 1);
+      if (evoOn) {
+        startEvolution(++brainSeed);
+      } else {
+        reset(brainSeed + 1);
+      }
     }
   });
   window.addEventListener('resize', resize);

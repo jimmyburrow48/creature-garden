@@ -8,6 +8,7 @@
 
   var MUSCLE_CONTRACT = 0.25; // a muscle can shorten by up to 25%
   var BRAIN_HIDDEN = 10;
+  var MUSCLE_RATE = 0.02; // how far a muscle can move its pull in one substep (a real muscle takes time to squeeze)
 
   // a worm: a chain of nodes, bones between neighbours, muscles across every
   // other node. the wave phases run along the body so the squeeze travels
@@ -27,7 +28,7 @@
       edges.push(edge(nodes, i, i + 1, 'bone', gap, 0, 1));
     }
     for (i = 0; i + 2 < n; i++) {
-      edges.push(edge(nodes, i, i + 2, 'muscle', 2 * gap, i * 0.9, 0.7));
+      edges.push(edge(nodes, i, i + 2, "muscle", 2 * gap, i * -0.9, 0.7));
     }
     var muscles = edges.filter(function (e) { return e.kind === 'muscle'; });
     return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: opts.name || 'worm' };
@@ -139,21 +140,111 @@
   }
 
   // set every muscle's pull for this moment: from the brain, or the fixed wave.
+  // the pull eases towards its target, so a muscle cannot snap from relaxed to squeezed in one step.
   function drive(world, creature) {
     var m = creature.muscles;
     var i;
+    var target = new Array(m.length);
     if (!world.muscles) {
-      for (i = 0; i < m.length; i++) m[i].pull = 0;
-      return;
-    }
-    if (creature.brain) {
-      var out = think(creature.brain, senses(world, creature));
-      for (i = 0; i < m.length; i++) m[i].pull = out[i];
-      return;
+      for (i = 0; i < m.length; i++) target[i] = 0;
+    } else if (creature.brain) {
+      target = think(creature.brain, senses(world, creature));
+    } else {
+      for (i = 0; i < m.length; i++) {
+        target[i] = 0.5 + 0.5 * Math.sin(world.time * world.freq * Math.PI * 2 + m[i].phase);
+      }
     }
     for (i = 0; i < m.length; i++) {
-      m[i].pull = 0.5 + 0.5 * Math.sin(world.time * world.freq * Math.PI * 2 + m[i].phase);
+      var d = target[i] - m[i].pull;
+      m[i].pull += d > MUSCLE_RATE ? MUSCLE_RATE : d < -MUSCLE_RATE ? -MUSCLE_RATE : d;
     }
+  }
+
+
+  // ---- evolution (M3) ---------------------------------------------------
+
+  function cloneBrain(b) {
+    return { seed: b.seed, nIn: b.nIn, nHid: b.nHid, nOut: b.nOut,
+      w1: b.w1.slice(), b1: b.b1.slice(), w2: b.w2.slice(), b2: b.b2.slice() };
+  }
+
+  // a child: every weight nudged by a little gaussian noise.
+  function mutateBrain(b, sigma, r) {
+    var c = cloneBrain(b);
+    function nudge(arr) { for (var i = 0; i < arr.length; i++) arr[i] += gauss(r) * sigma; }
+    nudge(c.w1); nudge(c.b1); nudge(c.w2); nudge(c.b2);
+    return c;
+  }
+
+  // one trial: a fresh worm with this brain, run for some seconds. fitness = how far it went right.
+  function trial(brain, seconds, groundY) {
+    var world = makeWorld({ groundY: groundY });
+    var worm = makeWorm({ x: 0, y: 250, segments: 6, gap: 34 });
+    worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
+    worm.brain = brain;
+    world.creatures.push(worm);
+    var x0 = centre(worm).x;
+    for (var t = 0; t < seconds; t += 1 / 60) step(world, 1 / 60, 4);
+    var d = centre(worm).x - x0;
+    return Number.isFinite(d) ? d : -1e9;
+  }
+
+  // a population of random brains, plus the bookkeeping for generations.
+  function newEvolution(opts) {
+    var size = opts.size || 16;
+    var seed = opts.seed || 1;
+    var probe = makeWorm({ x: 0, y: 0, segments: 6, gap: 34 });
+    var nIn = probe.nodes.length * 2 + probe.muscles.length + 2;
+    var pop = [];
+    for (var i = 0; i < size; i++) pop.push(makeBrain(seed * 1000 + i, nIn, probe.muscles.length));
+    return {
+      size: size,
+      elite: opts.elite || 4,
+      sigma: opts.sigma || 0.2,
+      seconds: opts.seconds || 10,
+      groundY: opts.groundY,
+      rng: rng(seed * 7919 + 1),
+      pop: pop,
+      scores: new Array(size),
+      index: 0,
+      gen: 0,
+      best: null,
+      bestScore: -Infinity
+    };
+  }
+
+  // score the population, then breed the next one. selection: keep the elite, fill the rest with mutants.
+  function breed(ev) {
+    var order = ev.scores.map(function (s, i) { return i; });
+    order.sort(function (a, b) { return ev.scores[b] - ev.scores[a]; });
+    if (ev.scores[order[0]] > ev.bestScore) {
+      ev.bestScore = ev.scores[order[0]];
+      ev.best = cloneBrain(ev.pop[order[0]]);
+    }
+    var next = [];
+    var i;
+    for (i = 0; i < ev.elite; i++) next.push(cloneBrain(ev.pop[order[i]]));
+    while (next.length < ev.size) {
+      var parent = ev.pop[order[Math.floor(ev.rng() * ev.elite)]];
+      next.push(mutateBrain(parent, ev.sigma, ev.rng));
+    }
+    ev.pop = next;
+    ev.scores = new Array(ev.size);
+    ev.index = 0;
+    ev.gen++;
+  }
+
+  // do trials until the time budget is used up. one trial, or one breeding, at a time.
+  function evolveTick(ev, budgetMs) {
+    var start = Date.now();
+    do {
+      if (ev.index < ev.pop.length) {
+        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY);
+        ev.index++;
+      } else {
+        breed(ev);
+      }
+    } while (Date.now() - start < budgetMs);
   }
 
   // ---- physics ----------------------------------------------------------
@@ -266,6 +357,10 @@
     makeWorm: makeWorm,
     makeWorld: makeWorld,
     attachBrain: attachBrain,
+    newEvolution: newEvolution,
+    evolveTick: evolveTick,
+    cloneBrain: cloneBrain,
+    trial: trial,
     step: step,
     centre: centre,
     nodeAt: nodeAt,
