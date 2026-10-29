@@ -20,6 +20,7 @@
   var world = S.makeWorld({ groundY: groundY, muscles: true, freq: 3.2 });
   var creature = null;
   var cam = { x: START_X };
+  var camTop = VIEW_TOP; // the view also rises when the creature jumps up
   var paused = false;
   var dragNode = null;
   var pointer = { x: 0, y: 0, inside: false };
@@ -62,9 +63,9 @@
 
   // world -> screen. the camera follows the creature's middle.
   function sx(x) { return (x - cam.x) * scale + width / 2; }
-  function sy(y) { return (y - VIEW_TOP) * scale; }
+  function sy(y) { return (y - camTop) * scale; }
   function wx(px) { return (px - width / 2) / scale + cam.x; }
-  function wy(py) { return py / scale + VIEW_TOP; }
+  function wy(py) { return py / scale + camTop; }
 
   function lerpColor(a, b, t) {
     var out = [];
@@ -210,15 +211,16 @@
     var secs = world.time;
     var line2 = 'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths';
     if (evoOn) {
-      line2 = 'evolving  ·  gen ' + evo.gen + '  ·  best ' + (evo.bestScore / 34).toFixed(1) +
-        ' body lengths  ·  trial ' + evo.index + '/' + evo.size;
+      line2 = 'evolving ' + task + '  ·  gen ' + evo.gen + '  ·  best ' +
+        (task === 'jump' ? evo.bestScore.toFixed(0) + ' px high' : (evo.bestScore / 34).toFixed(1) + ' body lengths') +
+        '  ·  trial ' + evo.index + '/' + evo.size;
     }
     hud.textContent =
       'creature garden  ·  M3 evolution\n' +
       line2 + '\n' +
       'brain ' + (creature.brain ? (evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
-      '\ndrag a joint  ·  E evolve  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
+      '\ndrag a joint  ·  E evolve  ·  T run or jump  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
   }
 
   // evolution (M3): a population of brains is tried in the background, and the live
@@ -226,6 +228,7 @@
   var evo = null;
   var evoOn = false;
   var shownScore = -Infinity;
+  var task = 'run'; // 'run' = how far right, 'jump' = how high the middle gets
 
   function showBest() {
     world.creatures = [];
@@ -238,7 +241,7 @@
   }
 
   function startEvolution(seed) {
-    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY });
+    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task });
     evoOn = true;
     shownScore = -Infinity;
     world.time = 0;
@@ -262,6 +265,9 @@
     if (creature) {
       var target = S.centre(creature).x;
       cam.x += (target - cam.x) * Math.min(1, dt * 4);
+      // the view only rises when the middle goes above its usual height
+      var wantTop = Math.min(VIEW_TOP, VIEW_TOP + S.centre(creature).y - 250);
+      camTop += (wantTop - camTop) * Math.min(1, dt * 3);
     }
     draw();
     requestAnimationFrame(frame);
@@ -318,6 +324,12 @@
       } else {
         brainOn = true;
         startEvolution(brainSeed);
+      }
+    } else if (e.key === 't' || e.key === 'T') {
+      task = task === 'run' ? 'jump' : 'run';
+      if (evoOn) {
+        S.setTask(evo, task);
+        shownScore = -Infinity;
       }
     } else if (e.key === 'r' || e.key === 'R') {
       if (evoOn) {

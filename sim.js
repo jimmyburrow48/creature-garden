@@ -176,17 +176,22 @@
     return c;
   }
 
-  // one trial: a fresh worm with this brain, run for some seconds. fitness = how far it went right.
-  function trial(brain, seconds, groundY) {
+  // one trial: a fresh worm with this brain, run for some seconds.
+  // task "run": fitness = how far it went right. task "jump": fitness = how high its middle got.
+  function trial(brain, seconds, groundY, task) {
     var world = makeWorld({ groundY: groundY });
     var worm = makeWorm({ x: 0, y: 250, segments: 6, gap: 34 });
     worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     worm.brain = brain;
     world.creatures.push(worm);
-    var x0 = centre(worm).x;
-    for (var t = 0; t < seconds; t += 1 / 60) step(world, 1 / 60, 4);
-    var d = centre(worm).x - x0;
-    return Number.isFinite(d) ? d : -1e9;
+    var start = centre(worm);
+    var highest = 0;
+    for (var t = 0; t < seconds; t += 1 / 60) {
+      step(world, 1 / 60, 4);
+      highest = Math.max(highest, start.y - centre(worm).y);
+    }
+    var score = task === 'jump' ? highest : centre(worm).x - start.x;
+    return Number.isFinite(score) ? score : -1e9;
   }
 
   // a population of random brains, plus the bookkeeping for generations.
@@ -202,6 +207,7 @@
       elite: opts.elite || 4,
       sigma: opts.sigma || 0.2,
       seconds: opts.seconds || 10,
+      task: opts.task || 'run',
       groundY: opts.groundY,
       rng: rng(seed * 7919 + 1),
       pop: pop,
@@ -234,12 +240,21 @@
     ev.gen++;
   }
 
+  // switch the task mid-run. the population (and what it learned) is kept; the scores start again.
+  function setTask(ev, task) {
+    ev.task = task;
+    ev.scores = new Array(ev.size);
+    ev.index = 0;
+    ev.best = null;
+    ev.bestScore = -Infinity;
+  }
+
   // do trials until the time budget is used up. one trial, or one breeding, at a time.
   function evolveTick(ev, budgetMs) {
     var start = Date.now();
     do {
       if (ev.index < ev.pop.length) {
-        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY);
+        ev.scores[ev.index] = trial(ev.pop[ev.index], ev.seconds, ev.groundY, ev.task);
         ev.index++;
       } else {
         breed(ev);
@@ -359,6 +374,7 @@
     attachBrain: attachBrain,
     newEvolution: newEvolution,
     evolveTick: evolveTick,
+    setTask: setTask,
     cloneBrain: cloneBrain,
     trial: trial,
     step: step,
