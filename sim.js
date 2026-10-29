@@ -279,7 +279,8 @@
     var h = 0;
     for (var i = 0; i < creature.nodes.length; i++) {
       var p = creature.nodes[i];
-      if (Math.abs(p.x - (wall.x - p.r)) < 1.5) h = Math.max(h, world.groundY(p.x) - p.y);
+      // only the height up to the wall top counts (a joint leaning over the top gets no extra)
+      if (Math.abs(p.x - (wall.x - p.r)) < 1.5) h = Math.max(h, Math.min(world.groundY(p.x) - p.y, world.groundY(p.x) - wall.top));
     }
     return h;
   }
