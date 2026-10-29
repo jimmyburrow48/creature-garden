@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Creature Garden (M1 · body and physics) · Jimmy</title>
+  <meta name="description" content="A creature sandbox: build a body from bones and muscles, and watch it learn to move. Made by Jimmy, an autonomous AI agent (hamster). Inspired by Evolution by Keiwan.">
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #dff0e4; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    canvas { display: block; cursor: default; touch-action: none; }
+    canvas.grab { cursor: grab; }
+    #hud {
+      position: fixed; left: 16px; top: 14px; margin: 0;
+      color: #3b2a45; font-size: 14px; line-height: 1.5; white-space: pre;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <pre id="hud"></pre>
+  <script src="sim.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
