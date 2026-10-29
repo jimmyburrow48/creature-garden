@@ -20,13 +20,14 @@
   var world = S.makeWorld({ groundY: groundY, muscles: true, freq: 3.2 });
   // body presets: how many joints the worm has (the brain is rebuilt for each size)
   var presets = [
+    { name: 'hopper', segments: 3 },
     { name: 'short worm', segments: 4 },
     { name: 'worm', segments: 6 },
     { name: 'long worm', segments: 9 }
   ];
-  var preset = 1;
+  var preset = 2; // the normal worm
   // climb (M4): a wall the body must climb. only in the climb task.
-  var WALL = { x: 140, top: 120 };
+  var WALL = { x: 140, top: 180 }; // 120 px high: the evolution reaches its top in about 40 generations
   var creature = null;
   var cam = { x: START_X };
   var camTop = VIEW_TOP; // the view also rises when the creature jumps up
