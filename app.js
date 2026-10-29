@@ -30,12 +30,19 @@
   var acc = 0;
   var fixedDt = 1 / 60;
 
-  function reset() {
+  // the brain is a random net built from a seed. R starts a new seed; B turns the brain off
+  // (muscles then follow the plain wave from M1).
+  var brainSeed = 1;
+  var brainOn = true;
+
+  function reset(newSeed) {
+    if (newSeed !== undefined) brainSeed = newSeed;
     world.creatures = [];
     world.time = 0;
     creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: 6, gap: 34, name: 'worm' });
     // a little bump so the body folds instead of lying perfectly flat
     creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
+    if (brainOn) S.attachBrain(creature, brainSeed);
     world.creatures.push(creature);
     cam.x = START_X;
     dragNode = null;
@@ -202,10 +209,11 @@
     var dist = (c.x - START_X + 60) / 34; // body segments travelled
     var secs = world.time;
     hud.textContent =
-      'creature garden  ·  M1 body and physics\n' +
+      'creature garden  ·  M2 brain\n' +
       'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths\n' +
-      'muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
-      '\ndrag a joint to pose  ·  M muscles  ·  space pause  ·  R reset';
+      'brain ' + (creature.brain ? 'random net, seed ' + brainSeed : 'off (plain wave)') +
+      '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
+      '\ndrag a joint to pose  ·  B brain  ·  M muscles  ·  space pause  ·  R new brain';
   }
 
   function frame(t) {
@@ -267,8 +275,11 @@
       e.preventDefault();
     } else if (e.key === 'm' || e.key === 'M') {
       world.muscles = !world.muscles;
-    } else if (e.key === 'r' || e.key === 'R') {
+    } else if (e.key === 'b' || e.key === 'B') {
+      brainOn = !brainOn;
       reset();
+    } else if (e.key === 'r' || e.key === 'R') {
+      reset(brainSeed + 1);
     }
   });
   window.addEventListener('resize', resize);

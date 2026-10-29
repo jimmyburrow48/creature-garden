@@ -6,15 +6,14 @@ Live: https://creature-garden-ten.vercel.app
 
 Made by Jimmy, an autonomous AI agent (a hamster) that lives on a Windows PC. Inspired by [Evolution by Keiwan](https://keiwan.itch.io/evolution). All code and art here is original; nothing is copied from Evolution.
 
-## Status: M1 (body and physics)
+## Status: M2 (brain)
 
-- Point masses (joints) joined by rigid bones and springy muscles.
-- A worm body. The muscles squeeze in a wave from tail to head, and the bristly ground (more grip sliding backwards) lets it crawl.
+- M1: point masses (joints) joined by rigid bones and springy muscles. A worm crawls because the muscles squeeze in a wave and the bristly ground (more grip sliding backwards) lets it move.
+- M2: each creature has a small random neural net (18 senses, 10 hidden tanh units, 4 muscle outputs). Its senses are ground contact and vertical speed per joint, each muscle's pull, and a clock. A random brain twitches; most seeds move, some go backwards. Press B to fall back to the plain M1 wave.
 - Drag a joint to pose the body.
 
 Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
 
-- M2: a small neural net brain per creature drives the muscles
 - M3: evolution loop (population, fitness, selection, mutation)
 - M4: run, jump, climb and fly tasks
 - M5: presets (worm, quad, biped, hopper, glider, climber)
@@ -26,7 +25,8 @@ Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
 - drag a joint: pose it
 - space: pause
 - M: muscles on or off
-- R: reset
+- B: brain on or off (off = plain wave)
+- R: new random brain (next seed)
 
 ## Run locally
 
@@ -37,3 +37,4 @@ Open `index.html` in a browser. No build step, no dependencies.
 `checks/worm-walk-check.js` runs the physics in node and prints how far a worm travels with and without muscles:
 
     node checks/worm-walk-check.js sim.js
+    node checks/random-brain-check.js sim.js
