@@ -199,6 +199,69 @@
     }
   }
 
+  // dust puffs: a joint that lands on the ground throws a few soft puffs (M6 look)
+  var puffs = [];
+  var lastCheck = null;
+
+  function spawnDust(n, dropSpeed) {
+    if (!n) return;
+    var k = Math.min(4, Math.max(1, Math.round(dropSpeed / 120)));
+    for (var i = 0; i < k; i++) {
+      puffs.push({ x: n.x, y: groundY(n.x), vx: (Math.random() - 0.5) * 60, vy: -20 - Math.random() * 40, life: 0, max: 0.6 + Math.random() * 0.3, r: 4 + Math.random() * 5 });
+    }
+  }
+
+  function updatePuffs(dt) {
+    for (var i = puffs.length - 1; i >= 0; i--) {
+      var p = puffs[i];
+      p.life += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 60 * dt;
+      p.r += 14 * dt;
+      if (p.life > p.max) puffs.splice(i, 1);
+    }
+  }
+
+  function checkLandings() {
+    if (!creature) return;
+    for (var i = 0; i < creature.nodes.length; i++) {
+      var n = creature.nodes[i];
+      var onGround = n.y >= groundY(n.x) - n.r - 0.5;
+      var wasAir = lastCheck && lastCheck[i];
+      if (onGround && wasAir) {
+        var speed = (n.y - n.py) * 240; // the last substep is 1/240 s
+        if (speed > 80) spawnDust(n, speed);
+      }
+    }
+    lastCheck = creature.nodes.map(function (n) { return n.y < groundY(n.x) - n.r - 0.5; });
+  }
+
+  function drawPuffs() {
+    for (var i = 0; i < puffs.length; i++) {
+      var p = puffs[i];
+      var a = (1 - p.life / p.max) * 0.45;
+      ctx.fillStyle = 'rgba(244,238,222,' + a.toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(sx(p.x), sy(p.y), p.r * scale * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // soft light from the upper right, and darker corners (cheap, drawn over the scene)
+  function drawLighting() {
+    var sun = ctx.createRadialGradient(width * 0.82, height * 0.05, 0, width * 0.82, height * 0.05, height * 0.9);
+    sun.addColorStop(0, 'rgba(255,246,214,0.35)');
+    sun.addColorStop(1, 'rgba(255,246,214,0)');
+    ctx.fillStyle = sun;
+    ctx.fillRect(0, 0, width, height);
+    var vig = ctx.createRadialGradient(width / 2, height / 2, height * 0.35, width / 2, height / 2, height * 0.85);
+    vig.addColorStop(0, 'rgba(20,30,40,0)');
+    vig.addColorStop(1, 'rgba(20,30,40,0.22)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, width, height);
+  }
+
   function draw() {
     drawSky();
     drawHills(0.25, 230, 26, 'rgba(170,205,190,0.8)', 0.4);
@@ -208,6 +271,8 @@
       drawShadow(S.centre(creature));
       drawCreature(creature);
     }
+    drawPuffs();
+    drawLighting();
     drawHud();
   }
 
@@ -265,6 +330,7 @@
       acc += dt;
       while (acc >= fixedDt) {
         S.step(world, fixedDt, 4);
+        checkLandings();
         acc -= fixedDt;
       }
     }
@@ -276,6 +342,7 @@
       var wantTop = Math.min(VIEW_TOP, VIEW_TOP + S.centre(creature).y - 250);
       camTop += (wantTop - camTop) * Math.min(1, dt * 3);
     }
+    updatePuffs(dt);
     draw();
     requestAnimationFrame(frame);
   }
