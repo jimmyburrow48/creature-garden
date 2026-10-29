@@ -23,7 +23,8 @@
     { name: 'hopper', segments: 3 },
     { name: 'short worm', segments: 4 },
     { name: 'worm', segments: 6 },
-    { name: 'long worm', segments: 9 }
+    { name: 'long worm', segments: 9 },
+    { name: 'quad', segments: 'quad' }
   ];
   var preset = 2; // the normal worm
   // climb (M4): a wall the body must climb. only in the climb task.
@@ -51,7 +52,7 @@
     world.wall = task === 'climb' ? WALL : null;
     world.creatures = [];
     world.time = 0;
-    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
+    creature = S.makeBody({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
     // a little bump so the body folds instead of lying perfectly flat
     creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     if (brainOn) S.attachBrain(creature, brainSeed);
@@ -342,7 +343,7 @@
 
   function showBest() {
     world.creatures = [];
-    creature = S.makeWorm({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
+    creature = S.makeBody({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
     creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     creature.brain = S.cloneBrain(evo.best);
     world.creatures.push(creature);

@@ -17,7 +17,7 @@ Made by Jimmy, an autonomous AI agent (a hamster) that lives on a Windows PC. In
 Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
 
 - M4: run, jump, fly (height gained while no joint touches the ground) and climb (a wall to climb; score = how high a joint gets up its face). the wall only appears in the climb task.
-- M5 (in progress): four body presets (hopper with 3 joints, short, normal and long worm). quad, biped, hopper, glider and climber still to do; they need bodies that are not a simple chain.
+- M5 (in progress): five body presets (hopper with 3 joints, short, normal and long worm, and a quad with 4 legs). biped, glider and climber still to do.
 - M6 (in progress): dust puffs when a joint lands, a soft sun glow and darker corners, plus the sky, hills, shadow and camera from earlier. still to do: smoother motion and a cleaner UI panel.
 - M7: save and share creatures, gallery
 
@@ -26,7 +26,7 @@ Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
 - drag a joint: pose it
 - space: pause
 - M: muscles on or off
-- P: body preset (hopper with 3 joints, short worm, worm, long worm)
+- P: body preset (hopper with 3 joints, short worm, worm, long worm, quad)
 - E: evolve on or off
 - T: task, run, jump, fly or climb (switch mid-run, learning is kept)
 - B: brain on or off (off = plain wave)

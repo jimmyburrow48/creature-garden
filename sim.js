@@ -34,6 +34,40 @@
     return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: opts.name || 'worm' };
   }
 
+  // a quadruped (M5): a spine of 4 joints, a foot under each spine joint, and 6 muscles.
+  function makeQuad(opts) {
+    var x0 = opts.x || 0;
+    var y0 = opts.y || 0;
+    var gap = 40;
+    var spine = [];
+    var feet = [];
+    var i;
+    for (i = 0; i < 4; i++) spine.push(node(x0 + i * gap, y0, opts.radius || 6));
+    for (i = 0; i < 4; i++) feet.push(node(x0 + i * gap, y0 + 28, opts.radius || 6));
+    var nodes = spine.concat(feet);
+    var edges = [];
+    for (i = 0; i < 3; i++) edges.push(edge2(spine[i], spine[i + 1], 'bone', gap, 0, 1));
+    for (i = 0; i < 4; i++) edges.push(edge2(spine[i], feet[i], 'bone', 28, 0, 1));
+    edges.push(edge2(spine[0], spine[2], 'muscle', 2 * gap, 0, 0.7));
+    edges.push(edge2(spine[1], spine[3], 'muscle', 2 * gap, 1.6, 0.7));
+    var legRest = Math.hypot(gap, 28);
+    edges.push(edge2(feet[0], spine[1], 'muscle', legRest, 0.5, 0.6));
+    edges.push(edge2(feet[1], spine[2], 'muscle', legRest, 2.1, 0.6));
+    edges.push(edge2(feet[2], spine[3], 'muscle', legRest, 3.7, 0.6));
+    edges.push(edge2(feet[3], spine[2], 'muscle', legRest, 4.3, 0.6));
+    var muscles = edges.filter(function (e) { return e.kind === 'muscle'; });
+    return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: 'quad' };
+  }
+
+  // any body: opts.segments is a number (a worm with that many joints) or 'quad'
+  function makeBody(opts) {
+    return opts.segments === 'quad' ? makeQuad(opts) : makeWorm(opts);
+  }
+
+  function edge2(a, b, kind, rest, phase, stiff) {
+    return { a: a, b: b, kind: kind, rest: rest, phase: phase, stiff: stiff, pull: 0 };
+  }
+
   function node(x, y, r) {
     return { x: x, y: y, px: x, py: y, r: r, invMass: 1, pinned: false };
   }
@@ -183,7 +217,7 @@
     var world = makeWorld({ groundY: groundY });
     world.wall = wall || null;
     var startX = wall ? wall.x - 260 : 0;
-    var worm = makeWorm({ x: startX, y: 250, segments: segments || 6, gap: 34 });
+    var worm = makeBody({ x: startX, y: 250, segments: segments || 6, gap: 34 });
     worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     worm.brain = brain;
     world.creatures.push(worm);
@@ -207,7 +241,7 @@
     var size = opts.size || 16;
     var seed = opts.seed || 1;
     var segs = opts.segments || 6;
-    var probe = makeWorm({ x: 0, y: 0, segments: segs, gap: 34 });
+    var probe = makeBody({ x: 0, y: 0, segments: segs, gap: 34 });
     var nIn = probe.nodes.length * 2 + probe.muscles.length + 2;
     var pop = [];
     for (var i = 0; i < size; i++) pop.push(makeBrain(seed * 1000 + i, nIn, probe.muscles.length));
@@ -408,6 +442,7 @@
 
   var api = {
     makeWorm: makeWorm,
+    makeBody: makeBody,
     makeWorld: makeWorld,
     attachBrain: attachBrain,
     newEvolution: newEvolution,
