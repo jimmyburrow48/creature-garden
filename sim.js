@@ -59,9 +59,43 @@
     return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: 'quad' };
   }
 
-  // any body: opts.segments is a number (a worm with that many joints) or 'quad'
+  // a biped (M5): a torso (back, hip, shoulder), a head on the shoulder, and two feet hung off the hip.
+  // 6 joints, 5 bones and 4 muscles = 9 edges. that matches the 9 free directions of 6 joints in 2D,
+  // so the bones are not fought by the muscles. (a 5-joint version with 8 edges let the bones
+  // stretch 19 percent: the muscles pulled against each other and the rigid bones gave way.)
+  function makeBiped(opts) {
+    var x0 = opts.x || 0;
+    var y0 = opts.y || 0;
+    var gap = 40;
+    var r = opts.radius || 6;
+    var back = node(x0, y0, r);
+    var hip = node(x0 + gap, y0, r);
+    var shoulder = node(x0 + 2 * gap, y0, r);
+    var head = node(x0 + 2 * gap, y0 - 26, r);
+    var footL = node(x0 + gap - 12, y0 + 30, r);
+    var footR = node(x0 + gap + 12, y0 + 30, r);
+    var nodes = [back, hip, shoulder, head, footL, footR];
+    var edges = [];
+    edges.push(edge2(back, hip, 'bone', gap, 0, 1));
+    edges.push(edge2(hip, shoulder, 'bone', gap, 0, 1));
+    edges.push(edge2(shoulder, head, 'bone', 26, 0, 1));
+    edges.push(edge2(hip, footL, 'bone', Math.hypot(12, 30), 0, 1));
+    edges.push(edge2(hip, footR, 'bone', Math.hypot(12, 30), 0, 1));
+    // muscles are soft (stiff 0.2): at 0.6 to 1.0 the muscles fought the bones, the bones stretched 20 to 27 percent
+    // and the feet flung the body at 800 to 1200 px/s. at 0.2 the peak is about 240 px/s, stretch about 6 percent.
+    edges.push(edge2(back, shoulder, 'muscle', 2 * gap, 0, 0.2));
+    edges.push(edge2(footL, back, 'muscle', Math.hypot(gap - 12, 30), 0.8, 0.2));
+    edges.push(edge2(footR, shoulder, 'muscle', Math.hypot(gap - 12, 30), 2.4, 0.2));
+    edges.push(edge2(footL, footR, 'muscle', 24, 3.2, 0.2));
+    var muscles = edges.filter(function (e) { return e.kind === 'muscle'; });
+    return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: 'biped' };
+  }
+
+  // any body: opts.segments is a number (a worm with that many joints), 'quad' or 'biped'
   function makeBody(opts) {
-    return opts.segments === 'quad' ? makeQuad(opts) : makeWorm(opts);
+    if (opts.segments === 'quad') return makeQuad(opts);
+    if (opts.segments === 'biped') return makeBiped(opts);
+    return makeWorm(opts);
   }
 
   function edge2(a, b, kind, rest, phase, stiff) {

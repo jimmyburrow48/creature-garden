@@ -24,7 +24,8 @@
     { name: 'short worm', segments: 4 },
     { name: 'worm', segments: 6 },
     { name: 'long worm', segments: 9 },
-    { name: 'quad', segments: 'quad' }
+    { name: 'quad', segments: 'quad' },
+    { name: 'biped', segments: 'biped' }
   ];
   var preset = 2; // the normal worm
   // climb (M4): a wall the body must climb. only in the climb task.
