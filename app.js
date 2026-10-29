@@ -55,7 +55,7 @@
     world.time = 0;
     creature = S.makeBody({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
     // a little bump so the body folds instead of lying perfectly flat
-    creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
+    if (!creature.noBump) creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     if (brainOn) S.attachBrain(creature, brainSeed);
     world.creatures.push(creature);
     cam.x = START_X;
@@ -345,7 +345,7 @@
   function showBest() {
     world.creatures = [];
     creature = S.makeBody({ x: START_X - 60, y: START_Y, segments: presets[preset].segments, gap: 34, name: presets[preset].name });
-    creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
+    if (!creature.noBump) creature.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     creature.brain = S.cloneBrain(evo.best);
     world.creatures.push(creature);
     cam.x = START_X;

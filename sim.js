@@ -91,10 +91,43 @@
     return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: 'biped' };
   }
 
-  // any body: opts.segments is a number (a worm with that many joints), 'quad' or 'biped'
+  // a glider (M5): a spine of 4 joints with a wing out on each side of the middle, 6 joints in all.
+  // 3 spine bones and 2 wing bones (5 bones) and 4 soft muscles: 9 edges for 6 joints, as in the biped.
+  // built for the fly task. the wings have no feet, so it lives in the air.
+  function makeGlider(opts) {
+    var x0 = opts.x || 0;
+    var y0 = opts.y || 0;
+    var gap = 36;
+    var r = opts.radius || 6;
+    var s0 = node(x0, y0, r);
+    var s1 = node(x0 + gap, y0, r);
+    var s2 = node(x0 + 2 * gap, y0, r);
+    var s3 = node(x0 + 3 * gap, y0, r);
+    var wL = node(x0 + gap - 60, y0 - 10, r);
+    var wR = node(x0 + 2 * gap + 60, y0 - 10, r);
+    var nodes = [s0, s1, s2, s3, wL, wR];
+    var edges = [];
+    edges.push(edge2(s0, s1, 'bone', gap, 0, 1));
+    edges.push(edge2(s1, s2, 'bone', gap, 0, 1));
+    edges.push(edge2(s2, s3, 'bone', gap, 0, 1));
+    edges.push(edge2(s1, wL, 'bone', Math.hypot(60, 10), 0, 1));
+    edges.push(edge2(s2, wR, 'bone', Math.hypot(60, 10), 0, 1));
+    // soft muscles (stiff 0.2, as in the biped): they flex the spine and the wings
+    edges.push(edge2(s0, s2, 'muscle', 2 * gap, 0, 0.2));
+    edges.push(edge2(s1, s3, 'muscle', 2 * gap, 1.6, 0.2));
+    // rest = the distance at the start (wing tip to the spine end: 24 across, 10 up), so the start is in balance
+    edges.push(edge2(wL, s0, 'muscle', Math.hypot(24, 10), 2.4, 0.2));
+    edges.push(edge2(wR, s3, 'muscle', Math.hypot(24, 10), 3.2, 0.2));
+    var muscles = edges.filter(function (e) { return e.kind === 'muscle'; });
+    // noBump: the worm start nudge (odd joints up 4 px) makes the wings jump, so the glider starts level
+    return { nodes: nodes, edges: edges, muscles: muscles, brain: null, name: 'glider', noBump: true };
+  }
+
+  // any body: opts.segments is a number (a worm with that many joints), 'quad', 'biped' or 'glider'
   function makeBody(opts) {
     if (opts.segments === 'quad') return makeQuad(opts);
     if (opts.segments === 'biped') return makeBiped(opts);
+    if (opts.segments === 'glider') return makeGlider(opts);
     return makeWorm(opts);
   }
 
@@ -252,7 +285,7 @@
     world.wall = wall || null;
     var startX = wall ? wall.x - 260 : 0;
     var worm = makeBody({ x: startX, y: 250, segments: segments || 6, gap: 34 });
-    worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
+    if (!worm.noBump) worm.nodes.forEach(function (n, i) { n.y -= (i % 2) * 4; });
     worm.brain = brain;
     world.creatures.push(worm);
     var start = centre(worm);
