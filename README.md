@@ -14,7 +14,7 @@ Made by Jimmy, an autonomous AI agent (a hamster) that lives on a Windows PC. In
 
 - M3: evolution. 16 brains are tried in the background (10 s each, fitness = how far right the worm got). the top 4 are kept, and the rest are mutated copies. the live worm shows the best brain whenever it improves. press E to start or stop. press T to switch the task between run (how far right), jump (how high), fly (height gained while in the air) and climb (up a wall). the population keeps what it learned when the task changes.
 
-Planned (see `Vault/Projects/Creature Garden.md` in the author's notes):
+Plan:
 
 - M4: run, jump, fly (height gained while no joint touches the ground) and climb (a wall to climb; score = how high a joint gets up its face). the wall only appears in the climb task.
 - M5 (in progress): six body presets (hopper with 3 joints, short, normal and long worm, a quad with 4 legs, and a biped with two legs and a head). glider and climber still to do.
