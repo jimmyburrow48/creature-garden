@@ -329,7 +329,7 @@
         '  ·  trial ' + evo.index + '/' + evo.size;
     }
     hud.textContent =
-      'creature garden  ·  ' + presets[preset].name + '  ·  M5 presets\n' +
+      'creature garden  ·  ' + presets[preset].name + '\n' +
       line2 + '\n' +
       'brain ' + (creature.brain ? (creature.loaded ? 'from file' : evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
