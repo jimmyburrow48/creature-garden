@@ -470,12 +470,11 @@
   var SAVE_FORMAT = 'creature-garden/1';
   var TASKS = ['run', 'jump', 'fly', 'climb'];
   var saveStatus = document.getElementById('save-status');
-  // the creature as plain data. a share link rounds to 6 decimals: 3 decimals changed how an evolved run replays
-  // (342 px became 81 px in a headless check), and 6 decimals replays the same score
-  function creatureData(precise) {
+  // the creature as plain data, at full precision: a rounded brain can replay differently (a chaotic evolved
+  // quad went 934 to 877 px at 6 decimals), so a shared creature must be the exact same brain
+  function creatureData() {
     var b = creature && creature.brain;
-    var r = function (x) { return precise ? x : Math.round(x * 1e6) / 1e6; };
-    var arr = function (a) { return a.map(r); };
+    var arr = function (a) { return a.slice(); };
     return {
       format: SAVE_FORMAT,
       body: presets[preset].name,
@@ -484,12 +483,12 @@
     };
   }
   function shareLink() {
-    var text = JSON.stringify(creatureData(false));
+    var text = JSON.stringify(creatureData());
     var b64 = btoa(unescape(encodeURIComponent(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     return location.href.split('#')[0] + '#creature=' + b64;
   }
   function saveCreature() {
-    var data = creatureData(true);
+    var data = creatureData();
     var url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
     var a = document.createElement('a');
     a.href = url;

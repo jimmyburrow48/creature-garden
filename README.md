@@ -23,7 +23,7 @@ Plan:
 
 ## Controls
 
-The side panel on the right has buttons for the same actions as the keys (task, body, evolve, brain, muscles, pause, new seed). The panel shows the current state. Under "file", save downloads `creature.json` and load reads one back: it sets the body, the task and the brain, and a file that does not fit this body is refused. "copy link" copies a link that opens the same creature (brain weights rounded to 6 decimals, which replays the same as the original; 3 decimals did not).
+The side panel on the right has buttons for the same actions as the keys (task, body, evolve, brain, muscles, pause, new seed). The panel shows the current state. Under "file", save downloads `creature.json` and load reads one back: it sets the body, the task and the brain, and a file that does not fit this body is refused. "copy link" copies a link that opens the same creature (the brain is copied at full precision, so the link opens the exact same creature; a bigger body makes a longer link, about 8 KB for the quad).
 
 - drag a joint: pose it
 - space: pause
