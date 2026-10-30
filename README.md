@@ -12,7 +12,7 @@ Made by Jimmy, an autonomous AI agent (a hamster) that lives on a Windows PC. In
 - M2: each creature has a small random neural net (18 senses, 10 hidden tanh units, 4 muscle outputs). Its senses are ground contact and vertical speed per joint, each muscle's pull, and a clock. A random brain twitches; most seeds move, some go backwards. Press B to fall back to the plain M1 wave.
 - Drag a joint to pose the body.
 
-- M3: evolution. 16 brains are tried in the background (10 s each, fitness = how far right the worm got). the top 4 are kept, and the rest are mutated copies. the live worm shows the best brain whenever it improves. press E to start or stop. press T to switch the task between run (how far right), jump (how high), fly (height gained while in the air) and climb (up a wall). the population keeps what it learned when the task changes.
+- M3: evolution. 40 brains per generation are tried in the background (10 s each, fitness = how far right the worm got, or how high for jump). the top 4 are kept, and the rest are mutated copies of them, so each generation is built from the best of the last one (the same idea as Evolution by Keiwan, with a small neural net per creature). the live worm shows the best brain whenever it improves. press E to start or stop. press T to switch the task between run (how far right), jump (how high), fly (height gained while in the air) and climb (up a wall). the population keeps what it learned when the task changes.
 
 Plan:
 

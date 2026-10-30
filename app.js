@@ -354,7 +354,7 @@
   }
 
   function startEvolution(seed) {
-    evo = S.newEvolution({ size: 16, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task, segments: presets[preset].segments, wall: task === 'climb' ? WALL : null });
+    evo = S.newEvolution({ size: 40, elite: 4, sigma: 0.2, seconds: 10, seed: seed, groundY: groundY, task: task, segments: presets[preset].segments, wall: task === 'climb' ? WALL : null });
     evoOn = true;
     shownScore = -Infinity;
     world.time = 0;
