@@ -19,11 +19,11 @@ Plan:
 - M4: run, jump, fly (height gained while no joint touches the ground) and climb (a wall to climb; score = how high a joint gets up its face). the wall only appears in the climb task.
 - M5 (in progress): six body presets (hopper with 3 joints, short, normal and long worm, a quad with 4 legs, and a biped with two legs and a head). glider and climber still to do.
 - M6 (in progress): dust puffs when a joint lands, a soft sun glow and darker corners, joint shadows, plus the sky, hills and camera from earlier. the side panel with buttons is in. still to do: smoother camera motion.
-- M7: save and share creatures, gallery
+- M7 (in progress): save a creature to a json file and load one back (body, task and brain weights). the file is checked before anything changes. still to do: share links and a gallery.
 
 ## Controls
 
-The side panel on the right has buttons for the same actions as the keys (task, body, evolve, brain, muscles, pause, new seed). The panel shows the current state.
+The side panel on the right has buttons for the same actions as the keys (task, body, evolve, brain, muscles, pause, new seed). The panel shows the current state. Under "file", save downloads `creature.json` and load reads one back: it sets the body, the task and the brain, and a file that does not fit this body is refused.
 
 - drag a joint: pose it
 - space: pause
