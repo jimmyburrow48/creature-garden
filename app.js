@@ -470,10 +470,11 @@
   var SAVE_FORMAT = 'creature-garden/1';
   var TASKS = ['run', 'jump', 'fly', 'climb'];
   var saveStatus = document.getElementById('save-status');
-  // the creature as plain data. a share link uses 3 decimals so the link stays short
+  // the creature as plain data. a share link rounds to 6 decimals: 3 decimals changed how an evolved run replays
+  // (342 px became 81 px in a headless check), and 6 decimals replays the same score
   function creatureData(precise) {
     var b = creature && creature.brain;
-    var r = function (x) { return precise ? x : Math.round(x * 1000) / 1000; };
+    var r = function (x) { return precise ? x : Math.round(x * 1e6) / 1e6; };
     var arr = function (a) { return a.map(r); };
     return {
       format: SAVE_FORMAT,
@@ -544,6 +545,18 @@
       function () { saveStatus.textContent = 'copy failed, nothing copied'; }
     );
   });
+  // gallery (M7, part): a few evolved creatures from gallery.json, each loaded like a file
+  fetch('gallery.json').then(function (r) { return r.ok ? r.json() : []; }).then(function (items) {
+    var box = document.getElementById('gallery');
+    items.forEach(function (item) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = item.name;
+      b.title = item.note;
+      b.addEventListener('click', function () { loadCreature(JSON.stringify(item.payload)); });
+      box.appendChild(b);
+    });
+  }).catch(function () { /* no gallery file: the panel just has no gallery */ });
   // opening a share link (#creature=...) loads that creature, with the same checks as a file
   function loadFromHash() {
     var m = location.hash.match(/^#creature=([A-Za-z0-9_-]+)$/);

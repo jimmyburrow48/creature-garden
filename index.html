@@ -40,6 +40,7 @@
     #panel .load { flex: 1 1 auto; font: inherit; text-align: center; padding: 6px 8px; border: 1px solid rgba(59,42,69,0.25); border-radius: 8px; background: rgba(255,255,255,0.7); cursor: pointer; overflow: hidden; }
     #panel .load input { width: 100%; font-size: 11px; margin-top: 4px; }
     #panel .status { font-size: 12px; opacity: 0.8; min-height: 1.2em; }
+    #panel .gallery { display: grid; gap: 6px; }
     @media (max-width: 640px) {
       #hud { right: 16px; font-size: 12px; }
       #panel { left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; }
@@ -74,6 +75,8 @@
       <label class="load">load <input id="load" type="file" accept=".json,application/json"></label>
     </div>
     <div id="save-status" class="status" role="status" aria-live="polite"></div>
+    <div class="label">gallery</div>
+    <div id="gallery" class="gallery"></div>
   </nav>
   <script src="sim.js"></script>
   <script src="app.js"></script>
