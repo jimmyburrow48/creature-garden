@@ -470,14 +470,25 @@
   var SAVE_FORMAT = 'creature-garden/1';
   var TASKS = ['run', 'jump', 'fly', 'climb'];
   var saveStatus = document.getElementById('save-status');
-  function saveCreature() {
+  // the creature as plain data. a share link uses 3 decimals so the link stays short
+  function creatureData(precise) {
     var b = creature && creature.brain;
-    var data = {
+    var r = function (x) { return precise ? x : Math.round(x * 1000) / 1000; };
+    var arr = function (a) { return a.map(r); };
+    return {
       format: SAVE_FORMAT,
       body: presets[preset].name,
       task: task,
-      brain: b ? { nIn: b.nIn, nHid: b.nHid, nOut: b.nOut, w1: b.w1, b1: b.b1, w2: b.w2, b2: b.b2 } : null
+      brain: b ? { nIn: b.nIn, nHid: b.nHid, nOut: b.nOut, w1: arr(b.w1), b1: arr(b.b1), w2: arr(b.w2), b2: arr(b.b2) } : null
     };
+  }
+  function shareLink() {
+    var text = JSON.stringify(creatureData(false));
+    var b64 = btoa(unescape(encodeURIComponent(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return location.href.split('#')[0] + '#creature=' + b64;
+  }
+  function saveCreature() {
+    var data = creatureData(true);
     var url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
     var a = document.createElement('a');
     a.href = url;
@@ -525,6 +536,26 @@
     saveStatus.textContent = 'loaded ' + data.body + ' (' + task + ')';
   }
   document.getElementById('save').addEventListener('click', saveCreature);
+  document.getElementById('share').addEventListener('click', function () {
+    var link = shareLink();
+    if (!navigator.clipboard) { saveStatus.textContent = 'copy not available here'; return; }
+    navigator.clipboard.writeText(link).then(
+      function () { saveStatus.textContent = 'share link copied'; },
+      function () { saveStatus.textContent = 'copy failed, nothing copied'; }
+    );
+  });
+  // opening a share link (#creature=...) loads that creature, with the same checks as a file
+  function loadFromHash() {
+    var m = location.hash.match(/^#creature=([A-Za-z0-9_-]+)$/);
+    if (!m) return;
+    var s = m[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    try {
+      loadCreature(decodeURIComponent(escape(atob(s))));
+    } catch (err) {
+      saveStatus.textContent = 'that share link is broken, nothing changed';
+    }
+  }
   document.getElementById('load').addEventListener('change', function (e) {
     var file = e.target.files[0];
     e.target.value = ''; // so the same file can be loaded again
@@ -584,5 +615,6 @@
 
   resize();
   reset();
+  loadFromHash();
   requestAnimationFrame(function (t) { lastT = t; requestAnimationFrame(frame); });
 })();
