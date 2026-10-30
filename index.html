@@ -18,11 +18,53 @@
       color: #3b2a45; font: 13px/1.6 ui-monospace, "Cascadia Mono", Consolas, monospace; white-space: pre;
       pointer-events: none;
     }
+    #panel {
+      position: fixed; right: 16px; top: 14px; width: 176px;
+      padding: 10px 12px; border-radius: 12px;
+      background: rgba(255,255,255,0.58);
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      box-shadow: 0 8px 28px rgba(30,50,40,0.14);
+      color: #3b2a45; font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+      display: grid; gap: 8px;
+    }
+    #panel .label { font-size: 12px; opacity: 0.7; }
+    #panel .row { display: flex; flex-wrap: wrap; gap: 6px; }
+    #panel .tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    #panel button {
+      flex: 1 1 auto; font: inherit; color: #3b2a45;
+      padding: 6px 8px; border: 1px solid rgba(59,42,69,0.25); border-radius: 8px;
+      background: rgba(255,255,255,0.7); cursor: pointer;
+    }
+    #panel button:hover { background: #fff; }
+    #panel button[aria-pressed="true"] { background: #3b2a45; color: #fff; border-color: #3b2a45; }
+    @media (max-width: 640px) {
+      #hud { right: 16px; font-size: 12px; }
+      #panel { left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; }
+    }
   </style>
 </head>
 <body>
   <canvas id="stage" role="img" aria-label="a creature made of bones and muscles on a hilly side view. drag a joint to pose it. the text panel lists the controls"></canvas>
   <pre id="hud"></pre>
+  <nav id="panel" aria-label="creature controls">
+    <div class="label">task</div>
+    <div class="tasks">
+      <button id="task-run" type="button" aria-pressed="true">run</button>
+      <button id="task-jump" type="button" aria-pressed="false">jump</button>
+      <button id="task-fly" type="button" aria-pressed="false">fly</button>
+      <button id="task-climb" type="button" aria-pressed="false">climb</button>
+    </div>
+    <button id="body" type="button">body</button>
+    <div class="row">
+      <button id="evolve" type="button" aria-pressed="false">evolve</button>
+      <button id="brain" type="button" aria-pressed="true">brain</button>
+    </div>
+    <div class="row">
+      <button id="muscles" type="button" aria-pressed="true">muscles</button>
+      <button id="pause" type="button">pause</button>
+    </div>
+    <button id="seed" type="button">new seed</button>
+  </nav>
   <script src="sim.js"></script>
   <script src="app.js"></script>
 </body>

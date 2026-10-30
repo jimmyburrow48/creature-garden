@@ -317,11 +317,12 @@
   }
 
   function drawHud() {
+    syncPanel();
     if (!creature) return;
     var c = S.centre(creature);
     var dist = (c.x - START_X + 60) / 34; // body segments travelled
     var secs = world.time;
-    var line2 = 'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths';
+    var line2 = 'time ' + secs.toFixed(1) + ' s  ·  travelled ' + dist.toFixed(1) + ' body lengths  ·  task ' + task;
     if (evoOn) {
       line2 = 'evolving ' + task + '  ·  gen ' + evo.gen + '  ·  best ' +
         (task === 'run' ? (evo.bestScore / 34).toFixed(1) + ' body lengths' : task === 'jump' ? evo.bestScore.toFixed(0) + ' px high' : evo.bestScore.toFixed(0) + (task === 'climb' ? ' px up the wall' : ' flight')) +
@@ -332,7 +333,7 @@
       line2 + '\n' +
       'brain ' + (creature.brain ? (evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
-      '\ndrag a joint  ·  E evolve  ·  T run, jump or fly  ·  P body  ·  B brain  ·  M muscles  ·  space pause  ·  R new seed';
+      '\ndrag a joint  ·  keys: E P T B M space R  ·  buttons on the right';
   }
 
   // evolution (M3): a population of brains is tried in the background, and the live
@@ -421,46 +422,96 @@
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
 
-  window.addEventListener('keydown', function (e) {
-    if (e.code === 'Space') {
-      paused = !paused;
-      e.preventDefault();
-    } else if (e.key === 'm' || e.key === 'M') {
-      world.muscles = !world.muscles;
-    } else if (e.key === 'b' || e.key === 'B') {
-      brainOn = !brainOn;
+  // the actions behind the keys and the side panel buttons (M6)
+  function togglePause() { paused = !paused; }
+  function toggleMuscles() { world.muscles = !world.muscles; }
+  function toggleBrain() {
+    brainOn = !brainOn;
+    evoOn = false;
+    reset();
+  }
+  function toggleEvolve() {
+    if (evoOn) {
       evoOn = false;
       reset();
+    } else {
+      brainOn = true;
+      startEvolution(brainSeed);
+    }
+  }
+  function nextPreset() {
+    preset = (preset + 1) % presets.length;
+    if (evoOn) {
+      startEvolution(brainSeed);
+    } else {
+      reset();
+    }
+  }
+  function setTask(name) {
+    task = name;
+    world.wall = task === 'climb' ? WALL : null;
+    if (evoOn) {
+      S.setTask(evo, task, world.wall);
+      shownScore = -Infinity;
+    }
+  }
+  function nextTask() {
+    setTask(task === 'run' ? 'jump' : task === 'jump' ? 'fly' : task === 'fly' ? 'climb' : 'run');
+  }
+  function newSeed() {
+    if (evoOn) {
+      startEvolution(++brainSeed);
+    } else {
+      reset(brainSeed + 1);
+    }
+  }
+
+  window.addEventListener('keydown', function (e) {
+    // a focused panel button takes its own space and enter; letter keys still work after a click
+    if (e.target.closest && e.target.closest('#panel') && (e.code === 'Space' || e.key === 'Enter')) return;
+    if (e.code === 'Space') {
+      togglePause();
+      e.preventDefault();
+    } else if (e.key === 'm' || e.key === 'M') {
+      toggleMuscles();
+    } else if (e.key === 'b' || e.key === 'B') {
+      toggleBrain();
     } else if (e.key === 'e' || e.key === 'E') {
-      if (evoOn) {
-        evoOn = false;
-        reset();
-      } else {
-        brainOn = true;
-        startEvolution(brainSeed);
-      }
+      toggleEvolve();
     } else if (e.key === 'p' || e.key === 'P') {
-      preset = (preset + 1) % presets.length;
-      if (evoOn) {
-        startEvolution(brainSeed);
-      } else {
-        reset();
-      }
+      nextPreset();
     } else if (e.key === 't' || e.key === 'T') {
-      task = task === 'run' ? 'jump' : task === 'jump' ? 'fly' : task === 'fly' ? 'climb' : 'run';
-      world.wall = task === 'climb' ? WALL : null;
-      if (evoOn) {
-        S.setTask(evo, task, world.wall);
-        shownScore = -Infinity;
-      }
+      nextTask();
     } else if (e.key === 'r' || e.key === 'R') {
-      if (evoOn) {
-        startEvolution(++brainSeed);
-      } else {
-        reset(brainSeed + 1);
-      }
+      newSeed();
     }
   });
+
+  // side panel (M6): buttons for the same actions; the panel shows the current state
+  ['run', 'jump', 'fly', 'climb'].forEach(function (name) {
+    document.getElementById('task-' + name).addEventListener('click', function () { setTask(name); });
+  });
+  document.getElementById('body').addEventListener('click', nextPreset);
+  document.getElementById('evolve').addEventListener('click', toggleEvolve);
+  document.getElementById('brain').addEventListener('click', toggleBrain);
+  document.getElementById('muscles').addEventListener('click', toggleMuscles);
+  document.getElementById('pause').addEventListener('click', togglePause);
+  document.getElementById('seed').addEventListener('click', newSeed);
+
+  var panelState = '';
+  function syncPanel() {
+    var state = [task, preset, evoOn, brainOn, world.muscles, paused].join('|');
+    if (state === panelState) return; // only touch the buttons when something changed
+    panelState = state;
+    ['run', 'jump', 'fly', 'climb'].forEach(function (name) {
+      document.getElementById('task-' + name).setAttribute('aria-pressed', String(task === name));
+    });
+    document.getElementById('body').textContent = 'body: ' + presets[preset].name;
+    document.getElementById('evolve').setAttribute('aria-pressed', String(evoOn));
+    document.getElementById('brain').setAttribute('aria-pressed', String(brainOn));
+    document.getElementById('muscles').setAttribute('aria-pressed', String(world.muscles));
+    document.getElementById('pause').textContent = paused ? 'resume' : 'pause';
+  }
   window.addEventListener('resize', resize);
 
   resize();
