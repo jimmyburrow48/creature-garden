@@ -37,6 +37,9 @@
     }
     #panel button:hover { background: #fff; }
     #panel button[aria-pressed="true"] { background: #3b2a45; color: #fff; border-color: #3b2a45; }
+    #panel .load { flex: 1 1 auto; font: inherit; text-align: center; padding: 6px 8px; border: 1px solid rgba(59,42,69,0.25); border-radius: 8px; background: rgba(255,255,255,0.7); cursor: pointer; overflow: hidden; }
+    #panel .load input { width: 100%; font-size: 11px; margin-top: 4px; }
+    #panel .status { font-size: 12px; opacity: 0.8; min-height: 1.2em; }
     @media (max-width: 640px) {
       #hud { right: 16px; font-size: 12px; }
       #panel { left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; }
@@ -64,6 +67,12 @@
       <button id="pause" type="button">pause</button>
     </div>
     <button id="seed" type="button">new seed</button>
+    <div class="label">file</div>
+    <div class="row">
+      <button id="save" type="button">save</button>
+      <label class="load">load <input id="load" type="file" accept=".json,application/json"></label>
+    </div>
+    <div id="save-status" class="status" role="status" aria-live="polite"></div>
   </nav>
   <script src="sim.js"></script>
   <script src="app.js"></script>

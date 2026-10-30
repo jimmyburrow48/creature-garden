@@ -331,7 +331,7 @@
     hud.textContent =
       'creature garden  ·  ' + presets[preset].name + '  ·  M5 presets\n' +
       line2 + '\n' +
-      'brain ' + (creature.brain ? (evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
+      'brain ' + (creature.brain ? (creature.loaded ? 'from file' : evoOn ? 'evolved' : 'random net, seed ' + brainSeed) : 'off (plain wave)') +
       '  ·  muscles ' + (world.muscles ? 'on' : 'off') + '  ·  ' + (paused ? 'paused' : 'running') +
       '\ndrag a joint  ·  keys: E P T B M space R  ·  buttons on the right';
   }
@@ -465,6 +465,74 @@
       reset(brainSeed + 1);
     }
   }
+
+  // save and load (M7, part): one creature as a small json file (body, task and brain weights)
+  var SAVE_FORMAT = 'creature-garden/1';
+  var TASKS = ['run', 'jump', 'fly', 'climb'];
+  var saveStatus = document.getElementById('save-status');
+  function saveCreature() {
+    var b = creature && creature.brain;
+    var data = {
+      format: SAVE_FORMAT,
+      body: presets[preset].name,
+      task: task,
+      brain: b ? { nIn: b.nIn, nHid: b.nHid, nOut: b.nOut, w1: b.w1, b1: b.b1, w2: b.w2, b2: b.b2 } : null
+    };
+    var url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'creature.json';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    saveStatus.textContent = 'saved creature.json';
+  }
+  function allNumbers(arr, n) {
+    if (!Array.isArray(arr) || arr.length !== n) return false;
+    for (var i = 0; i < n; i++) if (typeof arr[i] !== 'number' || !isFinite(arr[i])) return false;
+    return true;
+  }
+  function loadCreature(text) {
+    var data;
+    try { data = JSON.parse(text); } catch (err) { data = null; }
+    var idx = -1;
+    presets.forEach(function (p, i) { if (data && p.name === data.body) idx = i; });
+    if (!data || data.format !== SAVE_FORMAT || idx < 0 || TASKS.indexOf(data.task) < 0) {
+      saveStatus.textContent = 'not a creature file, nothing changed';
+      return;
+    }
+    // check the brain against this body before anything changes
+    var probe = S.makeBody({ x: 0, y: 0, segments: presets[idx].segments, gap: 34, name: presets[idx].name });
+    var nIn = probe.nodes.length * 2 + probe.muscles.length + 2;
+    var d = data.brain;
+    if (d) {
+      var okShape = d.nIn === nIn && d.nOut === probe.muscles.length && d.nHid > 0 &&
+        allNumbers(d.w1, d.nHid * nIn) && allNumbers(d.b1, d.nHid) &&
+        allNumbers(d.w2, d.nOut * d.nHid) && allNumbers(d.b2, d.nOut);
+      if (!okShape) {
+        saveStatus.textContent = 'the brain does not fit this body, nothing changed';
+        return;
+      }
+    }
+    evoOn = false;
+    preset = idx;
+    task = data.task;
+    brainOn = !!d;
+    reset();
+    if (d) {
+      creature.brain = { seed: null, nIn: d.nIn, nHid: d.nHid, nOut: d.nOut, w1: d.w1, b1: d.b1, w2: d.w2, b2: d.b2 };
+      creature.loaded = true;
+    }
+    saveStatus.textContent = 'loaded ' + data.body + ' (' + task + ')';
+  }
+  document.getElementById('save').addEventListener('click', saveCreature);
+  document.getElementById('load').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    e.target.value = ''; // so the same file can be loaded again
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { loadCreature(String(reader.result)); };
+    reader.readAsText(file);
+  });
 
   window.addEventListener('keydown', function (e) {
     // a focused panel button takes its own space and enter; letter keys still work after a click
